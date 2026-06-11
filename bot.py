@@ -35,12 +35,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
 
+    # ---------------- ADD FF ID ----------------
     if query.data == "add":
         user_state[user_id] = {"step": "name"}
         await query.message.reply_text("Please send me your Free Fire Account Name")
 
+    # ---------------- DELETE LIST ----------------
     elif query.data == "delete":
         data = db.get_all()
+
         if not data:
             await query.message.reply_text("No FF IDs found ❌")
             return
@@ -59,23 +62,60 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
+    # ---------------- SHOW LIST (BUTTON STYLE) ----------------
     elif query.data == "show":
         data = db.get_all()
+
         if not data:
             await query.message.reply_text("No data found ❌")
             return
 
-        text = "📋 Saved FF IDs:\n\n"
-        for v in data.values():
-            text += f"🎮 Name: {v['name']}\nUID: {v['uid']}\nText: {v['text']}\n\n"
+        keyboard = []
 
-        await query.message.reply_text(text)
+        for key, value in data.items():
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"🎮 {value['name']}",
+                    callback_data=f"view_{key}"
+                )
+            ])
 
+        await query.message.reply_text(
+            "📋 Select an FF ID:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    # ---------------- VIEW DETAILS ----------------
+    elif query.data.startswith("view_"):
+        key = query.data.split("_")[1]
+        data = db.get_one(key)
+
+        if not data:
+            await query.message.reply_text("Not found ❌")
+            return
+
+        text = f"""
+📋 FF ID Details:
+
+🎮 Name: {data['name']}
+🆔 UID: {data['uid']}
+📌 Text: {data['text']}
+"""
+
+        keyboard = [
+            [InlineKeyboardButton("🗑 Delete", callback_data=f"del_{key}")]
+        ]
+
+        await query.message.reply_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    # ---------------- DELETE ITEM ----------------
     elif query.data.startswith("del_"):
         key = query.data.split("_")[1]
         db.delete_data(key)
         await query.message.reply_text("Deleted Successfully 🗑")
-
 
 # ---------------- MESSAGE HANDLER ----------------
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
