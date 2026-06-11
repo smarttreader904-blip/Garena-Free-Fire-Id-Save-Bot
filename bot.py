@@ -176,16 +176,19 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state[user_id]["step"] = "uid"
         await update.message.reply_text("📩 Send UID")
 
-    elif step == "uid":
-        user_state[user_id]["uid"] = update.message.text
-        user_state[user_id]["step"] = "text"
-        await update.message.reply_text("📩 Send Text")
-
     elif step == "text":
     name = user_state[user_id]["name"]
     uid = user_state[user_id]["uid"]
     text = update.message.text
 
+    if update.message.from_user.id in ADMINS:
+        db.add_data(name, uid, text)
+        await update.message.reply_text("✅ Admin: Saved Directly")
+    else:
+        db.add_pending(name, uid, text, user_id)
+        await update.message.reply_text("⏳ Sent for Admin Approval")
+
+    user_state.pop(user_id)
     # ---------------- ADMIN CHECK ----------------
     if update.message.from_user.id in ADMINS:
         db.add_data(name, uid, text)
