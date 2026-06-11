@@ -3,11 +3,12 @@ import sqlite3
 DB_NAME = "database.db"
 
 
-# ---------------- CREATE TABLE ----------------
+# ---------------- INIT DB ----------------
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
 
+    # FINAL APPROVED DATA TABLE
     cur.execute("""
     CREATE TABLE IF NOT EXISTS ff_ids (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,11 +18,22 @@ def init_db():
     )
     """)
 
+    # PENDING APPROVAL TABLE
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS pending (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        uid TEXT,
+        text TEXT,
+        user_id TEXT
+    )
+    """)
+
     conn.commit()
     conn.close()
 
 
-# ---------------- ADD DATA ----------------
+# ---------------- ADD FINAL DATA ----------------
 def add_data(name, uid, text):
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
@@ -35,7 +47,21 @@ def add_data(name, uid, text):
     conn.close()
 
 
-# ---------------- GET ALL DATA ----------------
+# ---------------- ADD PENDING DATA ----------------
+def add_pending(name, uid, text, user_id):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO pending (name, uid, text, user_id)
+    VALUES (?, ?, ?, ?)
+    """, (name, uid, text, user_id))
+
+    conn.commit()
+    conn.close()
+
+
+# ---------------- GET ALL APPROVED DATA ----------------
 def get_all():
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
@@ -53,17 +79,6 @@ def get_all():
         }
 
     return data
-
-
-# ---------------- DELETE DATA ----------------
-def delete_data(user_id):
-    conn = sqlite3.connect(DB_NAME)
-    cur = conn.cursor()
-
-    cur.execute("DELETE FROM ff_ids WHERE id = ?", (user_id,))
-
-    conn.commit()
-    conn.close()
 
 
 # ---------------- GET SINGLE DATA ----------------
@@ -86,7 +101,18 @@ def get_one(user_id):
     return None
 
 
-# ---------------- UPDATE DATA ----------------
+# ---------------- DELETE APPROVED DATA ----------------
+def delete_data(user_id):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM ff_ids WHERE id = ?", (user_id,))
+
+    conn.commit()
+    conn.close()
+
+
+# ---------------- UPDATE APPROVED DATA ----------------
 def update_data(user_id, name=None, uid=None, text=None):
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
@@ -99,6 +125,29 @@ def update_data(user_id, name=None, uid=None, text=None):
 
     if text:
         cur.execute("UPDATE ff_ids SET text = ? WHERE id = ?", (text, user_id))
+
+    conn.commit()
+    conn.close()
+
+
+# ---------------- GET PENDING DATA ----------------
+def get_pending():
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM pending")
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows
+
+
+# ---------------- DELETE PENDING DATA ----------------
+def delete_pending(pid):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM pending WHERE id = ?", (pid,))
 
     conn.commit()
     conn.close()
