@@ -11,7 +11,6 @@ from telegram.ext import (
 from config import BOT_TOKEN, ADMINS
 import database as db
 
-# user state store
 user_state = {}
 
 
@@ -33,7 +32,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    user_id = query.from_user.id
+    user_id = str(query.from_user.id)
 
     # ---------------- ADD ----------------
     if query.data == "add":
@@ -84,10 +83,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🗑 Delete", callback_data=f"askdel_{key}")]
         ]
 
-        await query.message.reply_text(
-            text,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
     # ---------------- DELETE LIST ----------------
     elif query.data == "delete":
@@ -117,12 +113,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         key = query.data.split("_")[1]
 
         keyboard = [
-            [
-                InlineKeyboardButton("✅ Confirm", callback_data=f"del_{key}")
-            ],
-            [
-                InlineKeyboardButton("❌ Cancel", callback_data="cancel")
-            ]
+            [InlineKeyboardButton("✅ Confirm", callback_data=f"del_{key}")],
+            [InlineKeyboardButton("❌ Cancel", callback_data="cancel")]
         ]
 
         await query.message.reply_text(
@@ -140,67 +132,63 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "cancel":
         await query.message.reply_text("❌ Cancelled")
 
-    # ---------------- ADMIN APPROVE ----------------  
-elif query.data.startswith("ap_"):  
-    user_id = query.data.split("_")[1]  
+    # ---------------- ADMIN APPROVE ----------------
+    elif query.data.startswith("ap_"):
+        uid = query.data.split("_")[1]
 
-    pending = db.get_pending()  
+        pending = db.get_pending()
 
-    for row in pending:  
-        if str(row[4]) == user_id:  
-            db.add_data(row[1], row[2], row[3])  
-            db.delete_pending(row[0])  
-            break  
+        for row in pending:
+            if str(row[4]) == uid:
+                db.add_data(row[1], row[2], row[3])
+                db.delete_pending(row[0])
+                break
 
-    await context.bot.send_message(user_id, "✅ Your FF ID was approved")  
-    await query.message.reply_text("Approved ✔")  
+        await context.bot.send_message(uid, "✅ Your FF ID was approved")
+        await query.message.reply_text("Approved ✔")
+
+    # ---------------- ADMIN REJECT ----------------
+    elif query.data.startswith("rej_"):
+        uid = query.data.split("_")[1]
+
+        pending = db.get_pending()
+
+        for row in pending:
+            if str(row[4]) == uid:
+                db.delete_pending(row[0])
+                break
+
+        await context.bot.send_message(uid, "❌ Your FF ID was rejected")
+        await query.message.reply_text("Rejected ❌")
 
 
-# ---------------- ADMIN REJECT ----------------  
-elif query.data.startswith("rej_"):  
-    user_id = query.data.split("_")[1]  
-
-    pending = db.get_pending()  
-
-    for row in pending:  
-        if str(row[4]) == user_id:  
-            db.delete_pending(row[0])  
-            break  
-
-    await context.bot.send_message(user_id, "❌ Your FF ID was rejected")  
-    await query.message.reply_text("Rejected ❌")
-    
 # ---------------- MESSAGE HANDLER ----------------
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.message.from_user.id
+    user_id = str(update.message.from_user.id)
 
     if user_id not in user_state:
         return
 
     step = user_state[user_id]["step"]
 
-    # NAME
     if step == "name":
         user_state[user_id]["name"] = update.message.text
         user_state[user_id]["step"] = "uid"
         await update.message.reply_text("📩 Send UID")
 
-    # UID
     elif step == "uid":
         user_state[user_id]["uid"] = update.message.text
         user_state[user_id]["step"] = "text"
-        await update.message.reply_text("📩 Send Text (level/rank)")
+        await update.message.reply_text("📩 Send Text")
 
-    # SAVE
     elif step == "text":
         name = user_state[user_id]["name"]
         uid = user_state[user_id]["uid"]
         text = update.message.text
 
-        db.add_pending(name, uid, text, str(user_id))
+        db.add_pending(name, uid, text, user_id)
 
-        await update.message.reply_text("✅ Saved Successfully")
-
+        await update.message.reply_text("⏳ Sent for Admin Approval")
         user_state.pop(user_id)
 
 
