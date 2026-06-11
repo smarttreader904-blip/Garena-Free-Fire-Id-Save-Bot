@@ -140,47 +140,36 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "cancel":
         await query.message.reply_text("❌ Cancelled")
 
-    # ---------------- ADMIN APPROVE ----------------
-    elif query.data.startswith("ap_"):
-    user_id = query.data.split("_")[1]
+    # ---------------- ADMIN APPROVE ----------------  
+elif query.data.startswith("ap_"):  
+    user_id = query.data.split("_")[1]  
 
-    pending = db.get_pending()
+    pending = db.get_pending()  
 
-    for row in pending:
-        if str(row[4]) == user_id:
-            db.add_data(row[1], row[2], row[3])
-            db.delete_pending(row[0])
-            break
+    for row in pending:  
+        if str(row[4]) == user_id:  
+            db.add_data(row[1], row[2], row[3])  
+            db.delete_pending(row[0])  
+            break  
 
-    await context.bot.send_message(user_id, "✅ Your FF ID was approved")
-    await query.message.reply_text("Approved ✔")
+    await context.bot.send_message(user_id, "✅ Your FF ID was approved")  
+    await query.message.reply_text("Approved ✔")  
 
 
-elif query.data.startswith("rej_"):
-    user_id = query.data.split("_")[1]
+# ---------------- ADMIN REJECT ----------------  
+elif query.data.startswith("rej_"):  
+    user_id = query.data.split("_")[1]  
 
-    pending = db.get_pending()
+    pending = db.get_pending()  
 
-    for row in pending:
-        if str(row[4]) == user_id:
-            db.delete_pending(row[0])
-            break
+    for row in pending:  
+        if str(row[4]) == user_id:  
+            db.delete_pending(row[0])  
+            break  
 
-    await context.bot.send_message(user_id, "❌ Your FF ID was rejected")
+    await context.bot.send_message(user_id, "❌ Your FF ID was rejected")  
     await query.message.reply_text("Rejected ❌")
-    # ---------------- ADMIN REJECT ----------------
-    elif query.data.startswith("rej_"):
-    user_id = query.data.split("_")[1]
-
-    pending = db.get_pending()
-
-    for row in pending:
-        if str(row[4]) == user_id:
-            db.delete_pending(row[0])
-            break
-
-    await context.bot.send_message(user_id, "❌ Your FF ID was rejected")
-    await query.message.reply_text("Rejected ❌")
+    
 # ---------------- MESSAGE HANDLER ----------------
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
