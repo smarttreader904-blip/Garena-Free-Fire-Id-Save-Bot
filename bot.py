@@ -34,7 +34,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
+elif query.data.startswith("ap_"):
+    uid = query.data.split("_")[1]
 
+    db.add_data("Approved Name", uid, "Approved Text")
+
+    await context.bot.send_message(uid, "✅ Your FF ID was approved")
+
+    await query.message.reply_text("Approved ✔")
+
+
+elif query.data.startswith("rej_"):
+    uid = query.data.split("_")[1]
+
+    await context.bot.send_message(uid, "❌ Your FF ID was rejected")
+
+    await query.message.reply_text("Rejected ❌")
     # ---------------- ADD ----------------
     if query.data == "add":
         user_state[user_id] = {"step": "name"}
