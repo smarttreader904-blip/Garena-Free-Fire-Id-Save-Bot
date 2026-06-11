@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from database import init_db, add_ff
 
 BOT_TOKEN="YOUR_BOT_TOKEN"
-ADMINS={8136997138,8559227368}
+ADMINS={8859975301:AAEqR6ut9U_Vh77slUhAj5RdbwQmt2OoTXk}
 
 class AddFF(StatesGroup):
     name=State()
