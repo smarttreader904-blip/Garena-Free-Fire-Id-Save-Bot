@@ -160,8 +160,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await context.bot.send_message(uid, "❌ Your FF ID was rejected")
         await query.message.reply_text("Rejected ❌")
-
-
 # ---------------- MESSAGE HANDLER ----------------
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
@@ -171,24 +169,26 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     step = user_state[user_id]["step"]
 
+    # NAME
     if step == "name":
         user_state[user_id]["name"] = update.message.text
         user_state[user_id]["step"] = "uid"
         await update.message.reply_text("📩 Send UID")
 
+    # TEXT FINAL STEP
     elif step == "text":
-    name = user_state[user_id]["name"]
-    uid = user_state[user_id]["uid"]
-    text = update.message.text
+        name = user_state[user_id]["name"]
+        uid = user_state[user_id]["uid"]
+        text = update.message.text
 
-    if update.message.from_user.id in ADMINS:
-        db.add_data(name, uid, text)
-        await update.message.reply_text("✅ Admin: Saved Directly")
-    else:
-        db.add_pending(name, uid, text, user_id)
-        await update.message.reply_text("⏳ Sent for Admin Approval")
+        if update.message.from_user.id in ADMINS:
+            db.add_data(name, uid, text)
+            await update.message.reply_text("✅ Admin: Saved Directly")
+        else:
+            db.add_pending(name, uid, text, user_id)
+            await update.message.reply_text("⏳ Sent for Admin Approval")
 
-    user_state.pop(user_id)
+        user_state.pop(user_id)
     # ---------------- ADMIN CHECK ----------------
     if update.message.from_user.id in ADMINS:
         db.add_data(name, uid, text)
