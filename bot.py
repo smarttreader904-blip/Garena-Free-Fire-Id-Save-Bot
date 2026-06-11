@@ -154,7 +154,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(user_id, "✅ Your FF ID was approved")
     await query.message.reply_text("Approved ✔")
-
     # ---------------- ADMIN REJECT ----------------
     elif query.data.startswith("rej_"):
     user_id = query.data.split("_")[1]
