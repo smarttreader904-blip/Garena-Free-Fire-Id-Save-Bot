@@ -8,7 +8,7 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from config import BOT_TOKEN, ADMINS
+from config import BOT_TOKEN
 import database as db
 
 # user state store
@@ -19,12 +19,12 @@ user_state = {}
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("➕ Add FF ID", callback_data="add")],
-        [InlineKeyboardButton("🗑 Delete FF ID", callback_data="delete")],
         [InlineKeyboardButton("📋 Show IDs", callback_data="show")],
+        [InlineKeyboardButton("🗑 Delete FF ID", callback_data="delete")],
     ]
 
     await update.message.reply_text(
-        "Welcome to FF Save Bot 🎮\nChoose an option:",
+        "🎮 Welcome to FF Save Bot\nChoose an option:",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
@@ -35,39 +35,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
 
-    # ---------------- ADD FF ID ----------------
+    # ---------------- ADD ----------------
     if query.data == "add":
         user_state[user_id] = {"step": "name"}
-        await query.message.reply_text("Please send me your Free Fire Account Name")
+        await query.message.reply_text("📩 Send Free Fire Name")
 
-    # ---------------- DELETE LIST ----------------
-    elif query.data == "delete":
-        data = db.get_all()
-
-        if not data:
-            await query.message.reply_text("No FF IDs found ❌")
-            return
-
-        keyboard = []
-        for key, value in data.items():
-            keyboard.append([
-                InlineKeyboardButton(
-                    f"🎮 {value['name']}",
-                    callback_data=f"del_{key}"
-                )
-            ])
-
-        await query.message.reply_text(
-            "Select ID to delete:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-
-    # ---------------- SHOW LIST (BUTTON STYLE) ----------------
+    # ---------------- SHOW LIST ----------------
     elif query.data == "show":
         data = db.get_all()
 
         if not data:
-            await query.message.reply_text("No data found ❌")
+            await query.message.reply_text("❌ No data found")
             return
 
         keyboard = []
@@ -81,7 +59,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ])
 
         await query.message.reply_text(
-            "📋 Select an FF ID:",
+            "📋 Select ID:",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
@@ -91,11 +69,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = db.get_one(key)
 
         if not data:
-            await query.message.reply_text("Not found ❌")
+            await query.message.reply_text("❌ Not found")
             return
 
         text = f"""
-📋 FF ID Details:
+📋 FF ID Details
 
 🎮 Name: {data['name']}
 🆔 UID: {data['uid']}
@@ -103,7 +81,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
 
         keyboard = [
-            [InlineKeyboardButton("🗑 Delete", callback_data=f"del_{key}")]
+            [InlineKeyboardButton("🗑 Delete", callback_data=f"askdel_{key}")]
         ]
 
         await query.message.reply_text(
@@ -111,11 +89,57 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    # ---------------- DELETE ITEM ----------------
+    # ---------------- DELETE LIST ----------------
+    elif query.data == "delete":
+        data = db.get_all()
+
+        if not data:
+            await query.message.reply_text("❌ No data found")
+            return
+
+        keyboard = []
+
+        for key, value in data.items():
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"🎮 {value['name']}",
+                    callback_data=f"askdel_{key}"
+                )
+            ])
+
+        await query.message.reply_text(
+            "🗑 Select ID to delete:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    # ---------------- CONFIRM DELETE ----------------
+    elif query.data.startswith("askdel_"):
+        key = query.data.split("_")[1]
+
+        keyboard = [
+            [
+                InlineKeyboardButton("✅ Confirm", callback_data=f"del_{key}")
+            ],
+            [
+                InlineKeyboardButton("❌ Cancel", callback_data="cancel")
+            ]
+        ]
+
+        await query.message.reply_text(
+            "⚠️ Are you sure to delete?",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    # ---------------- FINAL DELETE ----------------
     elif query.data.startswith("del_"):
         key = query.data.split("_")[1]
         db.delete_data(key)
-        await query.message.reply_text("Deleted Successfully 🗑")
+        await query.message.reply_text("✅ Deleted Successfully")
+
+    # ---------------- CANCEL ----------------
+    elif query.data == "cancel":
+        await query.message.reply_text("❌ Cancelled")
+
 
 # ---------------- MESSAGE HANDLER ----------------
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -130,15 +154,15 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if step == "name":
         user_state[user_id]["name"] = update.message.text
         user_state[user_id]["step"] = "uid"
-        await update.message.reply_text("Please send your Free Fire UID")
+        await update.message.reply_text("📩 Send UID")
 
     # UID
     elif step == "uid":
         user_state[user_id]["uid"] = update.message.text
         user_state[user_id]["step"] = "text"
-        await update.message.reply_text("Please send any text (level, rank etc)")
+        await update.message.reply_text("📩 Send Text (level/rank)")
 
-    # TEXT FINAL SAVE
+    # TEXT SAVE
     elif step == "text":
         name = user_state[user_id]["name"]
         uid = user_state[user_id]["uid"]
@@ -146,7 +170,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         db.add_data(name, uid, text)
 
-        await update.message.reply_text("Saved Successfully ✅")
+        await update.message.reply_text("✅ Saved Successfully")
 
         user_state.pop(user_id)
 
