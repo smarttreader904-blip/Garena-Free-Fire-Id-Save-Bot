@@ -8,7 +8,7 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from config import BOT_TOKEN
+from config import BOT_TOKEN, ADMINS
 import database as db
 
 # user state store
@@ -34,28 +34,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
-elif query.data.startswith("ap_"):
-    uid = query.data.split("_")[1]
 
-    db.add_data("Approved Name", uid, "Approved Text")
-
-    await context.bot.send_message(uid, "✅ Your FF ID was approved")
-
-    await query.message.reply_text("Approved ✔")
-
-
-elif query.data.startswith("rej_"):
-    uid = query.data.split("_")[1]
-
-    await context.bot.send_message(uid, "❌ Your FF ID was rejected")
-
-    await query.message.reply_text("Rejected ❌")
     # ---------------- ADD ----------------
     if query.data == "add":
         user_state[user_id] = {"step": "name"}
         await query.message.reply_text("📩 Send Free Fire Name")
 
-    # ---------------- SHOW LIST ----------------
+    # ---------------- SHOW ----------------
     elif query.data == "show":
         data = db.get_all()
 
@@ -78,7 +63,7 @@ elif query.data.startswith("rej_"):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    # ---------------- VIEW DETAILS ----------------
+    # ---------------- VIEW ----------------
     elif query.data.startswith("view_"):
         key = query.data.split("_")[1]
         data = db.get_one(key)
@@ -141,7 +126,7 @@ elif query.data.startswith("rej_"):
         ]
 
         await query.message.reply_text(
-            "⚠️ Are you sure to delete?",
+            "⚠️ Are you sure?",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
@@ -154,6 +139,22 @@ elif query.data.startswith("rej_"):
     # ---------------- CANCEL ----------------
     elif query.data == "cancel":
         await query.message.reply_text("❌ Cancelled")
+
+    # ---------------- ADMIN APPROVE ----------------
+    elif query.data.startswith("ap_"):
+        uid = query.data.split("_")[1]
+
+        db.add_data("Approved Name", uid, "Approved Text")
+
+        await context.bot.send_message(uid, "✅ Your FF ID was approved")
+        await query.message.reply_text("Approved ✔")
+
+    # ---------------- ADMIN REJECT ----------------
+    elif query.data.startswith("rej_"):
+        uid = query.data.split("_")[1]
+
+        await context.bot.send_message(uid, "❌ Your FF ID was rejected")
+        await query.message.reply_text("Rejected ❌")
 
 
 # ---------------- MESSAGE HANDLER ----------------
@@ -177,7 +178,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_state[user_id]["step"] = "text"
         await update.message.reply_text("📩 Send Text (level/rank)")
 
-    # TEXT SAVE
+    # SAVE
     elif step == "text":
         name = user_state[user_id]["name"]
         uid = user_state[user_id]["uid"]
