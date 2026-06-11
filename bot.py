@@ -168,7 +168,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(user_id, "❌ Your FF ID was rejected")
     await query.message.reply_text("Rejected ❌")
-
 # ---------------- MESSAGE HANDLER ----------------
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
