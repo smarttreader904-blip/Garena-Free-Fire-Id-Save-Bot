@@ -142,20 +142,32 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # ---------------- ADMIN APPROVE ----------------
     elif query.data.startswith("ap_"):
-        uid = query.data.split("_")[1]
+    user_id = query.data.split("_")[1]
 
-        db.add_data("Approved Name", uid, "Approved Text")
+    pending = db.get_pending()
 
-        await context.bot.send_message(uid, "✅ Your FF ID was approved")
-        await query.message.reply_text("Approved ✔")
+    for row in pending:
+        if str(row[4]) == user_id:
+            db.add_data(row[1], row[2], row[3])
+            db.delete_pending(row[0])
+            break
+
+    await context.bot.send_message(user_id, "✅ Your FF ID was approved")
+    await query.message.reply_text("Approved ✔")
 
     # ---------------- ADMIN REJECT ----------------
     elif query.data.startswith("rej_"):
-        uid = query.data.split("_")[1]
+    user_id = query.data.split("_")[1]
 
-        await context.bot.send_message(uid, "❌ Your FF ID was rejected")
-        await query.message.reply_text("Rejected ❌")
+    pending = db.get_pending()
 
+    for row in pending:
+        if str(row[4]) == user_id:
+            db.delete_pending(row[0])
+            break
+
+    await context.bot.send_message(user_id, "❌ Your FF ID was rejected")
+    await query.message.reply_text("Rejected ❌")
 
 # ---------------- MESSAGE HANDLER ----------------
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
