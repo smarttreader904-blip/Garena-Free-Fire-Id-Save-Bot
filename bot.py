@@ -184,7 +184,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         uid = user_state[user_id]["uid"]
         text = update.message.text
 
-        db.add_data(name, uid, text)
+        db.add_pending(name, uid, text, str(user_id))
 
         await update.message.reply_text("✅ Saved Successfully")
 
